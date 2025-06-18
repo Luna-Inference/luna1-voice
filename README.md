@@ -4,43 +4,67 @@ Streaming mode implementation of the Piper TTS system in C++ with (optional) RK3
 
 ## How to use
 
-Before building, you will need to fulfill the following dependencies
+git clone https://github.com/Luna-Inference/luna1-voice
+cd luna1-voice
 
-* xtensor
-* spdlog
-* libfmt
-* piper-phoenomize
-* onnxruntime (1.14 or 1.15)
-* A C++20 capable compiler
+sudo apt update
+sudo apt install xtensor-dev libspdlog-dev libspdlog-dev libfmt-dev libsoxr-dev libjsoncpp-dev uuid-dev g++ libopus-dev libespeak-ng-dev libogg-dev
 
-(API/Web server)
-* Drogon
-* libsoxr
-* libopusenc
-    * You'll need to build this from source if on Ubuntu 22.04. Package available starting on 23.04
 
-(RKNN support)
-* [rknnrt >= 1.6.0](https://github.com/rockchip-linux/rknn-toolkit2/tree/v1.6.0/rknpu2/runtime/Linux/librknn_api)
+# Install piper-phonemize
+wget https://github.com/rhasspy/piper-phonemize/releases/download/2023.11.14-4/piper-phonemize_linux_aarch64.tar.gz
+tar -xvzf piper-phonemize_linux_aarch64.tar.gz
 
-In which `piper-phoenomize` and `onnxruntime` binary (not the source! Unless you want to build yourselves!) likely needs to be downloaded and decompressed manually. Afterwards run CMake and point to the folders you recompressed them.
+# Install drogon (any directory)
+git clone https://github.com/drogonframework/drogon
+cd drogon
+git submodule update --init
+mkdir build && cd build
+cmake ..
+make -j 8 && sudo make install
+cd ../..
 
-```bash
+#ubuntu 22.04 needs to build from source
+git clone https://gitlab.xiph.org/xiph/libopusenc.git
+cd libopusenc
+sudo apt install autoconf
+sudo apt-get install libtool
+sudo apt install opus-tools
+./autogen.sh
+./configure
+sudo make install
+cd ..
+
+
+
+# Download RKNN
+cd /usr/lib
+sudo wget https://raw.githubusercontent.com/rockchip-linux/rknn-toolkit2/refs/heads/master/rknpu2/runtime/Linux/librknn_api/aarch64/librknnrt.so
+cd 
+cd /usr/include
+sudo wget https://raw.githubusercontent.com/rockchip-linux/rknn-toolkit2/refs/heads/master/rknpu2/runtime/Linux/librknn_api/include/rknn_api.h
+sudo wget https://raw.githubusercontent.com/rockchip-linux/rknn-toolkit2/refs/heads/master/rknpu2/runtime/Linux/librknn_api/include/rknn_custom_op.h
+sudo wget https://raw.githubusercontent.com/rockchip-linux/rknn-toolkit2/refs/heads/master/rknpu2/runtime/Linux/librknn_api/include/rknn_matmul_api.h
+cd
+
+# Download Paroli
+git clone https://github.com/Luna-Inference/luna1-voice
+cd luna1-voice
+# Prepare cmake
 mkdir build
 cd build
-cmake .. -DORT_ROOT=/path/to/your/onnxruntime-linux-aarch64-1.14.1 -DPIPER_PHONEMIZE_ROOT=/path/to/your/piper-phonemize-2023-11-14 -DCMAKE_BUILD_TYPE=Release
-make -j
-# IMPORTANT! Copy espeak-ng-data or pass `--espeak_data` CLI flag
-cp -r /path/to/your/piper-phonemize-2023-11-14/share/espeak-ng-data .
-```
+cmake .. -DORT_ROOT=~/piper_phonemize -DPIPER_PHONEMIZE_ROOT=../../piper_phonemize/include/piper-phonemize -DCMAKE_BUILD_TYPE=Release -DUSE_RKNN=ON
+make -j 8
 
-Afterwards run `paroli-cli` and type into the console to synthesize speech. Please refer to later sections for generating the models.
 
-```plaintext
-./paroli-cli --encoder /path/to/your/encoder.onnx --decoder /path/to/your/decoder.onnx -c /path/to/your/model.json
-...
-[2023-12-23 03:13:12.452] [paroli] [info] Wrote /home/marty/Documents/rkpiper/build/./1703301190238261389.wav
-[2023-12-23 03:13:12.452] [paroli] [info] Real-time factor: 0.16085024956315996 (infer=2.201744556427002 sec, audio=13.688163757324219 sec)
-```
+# voice espeak
+cp -r ../../piper_phonemize/share/espeak-ng-data .
+
+#Download rknn voice: https://huggingface.co/marty1885/streaming-piper/tree/main/ljspeech
+git clone https://huggingface.co/marty1885/streaming-piper
+
+# Run
+sudo ./paroli-server --encoder streaming-piper/ljspeech/encoder.onnx --decoder streaming-piper/ljspeech/decoder.rknn -c streaming-piper/ljspeech/config.json --ip 0.0.0.0 --port 8848
 
 ### The API server
 

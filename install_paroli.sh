@@ -69,14 +69,25 @@ else
     cd "$LUNA_VOICE_ROOT_DIR"
 fi
 
-echo "Downloading RKNN libraries (requires sudo)..."
+echo "Setting up local RKNN directory in project folder..."
+LOCAL_RKNN_DIR="$LUNA_VOICE_ROOT_DIR/paroli_rknn_dependencies"
+LOCAL_RKNN_LIB_DIR="$LOCAL_RKNN_DIR/lib"
+LOCAL_RKNN_INCLUDE_DIR="$LOCAL_RKNN_DIR/include"
+
+echo "RKNN files will be placed in: $LOCAL_RKNN_DIR"
+mkdir -p "$LOCAL_RKNN_LIB_DIR"
+mkdir -p "$LOCAL_RKNN_INCLUDE_DIR"
+
+echo "Downloading RKNN libraries to $LOCAL_RKNN_DIR..."
 RKNN_BASE_URL="https://raw.githubusercontent.com/rockchip-linux/rknn-toolkit2/refs/heads/master/rknpu2/runtime/Linux/librknn_api"
-echo "Downloading librknnrt.so to /usr/lib/ (requires sudo)..."
-sudo wget -O /usr/lib/librknnrt.so "${RKNN_BASE_URL}/aarch64/librknnrt.so"
-echo "Downloading RKNN headers to /usr/include/ (requires sudo)..."
-sudo wget -O /usr/include/rknn_api.h "${RKNN_BASE_URL}/include/rknn_api.h"
-sudo wget -O /usr/include/rknn_custom_op.h "${RKNN_BASE_URL}/include/rknn_custom_op.h"
-sudo wget -O /usr/include/rknn_matmul_api.h "${RKNN_BASE_URL}/include/rknn_matmul_api.h"
+
+echo "Downloading librknnrt.so to $LOCAL_RKNN_LIB_DIR..."
+wget -O "$LOCAL_RKNN_LIB_DIR/librknnrt.so" "${RKNN_BASE_URL}/aarch64/librknnrt.so"
+
+echo "Downloading RKNN headers to $LOCAL_RKNN_INCLUDE_DIR..."
+wget -O "$LOCAL_RKNN_INCLUDE_DIR/rknn_api.h" "${RKNN_BASE_URL}/include/rknn_api.h"
+wget -O "$LOCAL_RKNN_INCLUDE_DIR/rknn_custom_op.h" "${RKNN_BASE_URL}/include/rknn_custom_op.h"
+wget -O "$LOCAL_RKNN_INCLUDE_DIR/rknn_matmul_api.h" "${RKNN_BASE_URL}/include/rknn_matmul_api.h"
 
 echo "Preparing to build Paroli..."
 mkdir -p "$LUNA_VOICE_ROOT_DIR/build"
@@ -109,9 +120,17 @@ echo "Running CMake for Paroli..."
 echo "Using ONNXRuntime from: $ONNXRUNTIME_DIR"
 echo "Using Piper Phonemize from: $PIPER_PHONEMIZE_EXTRACTED_DIR"
 
+# IMPORTANT: Paroli's main CMakeLists.txt will need to be updated to find these local RKNN libraries.
+# This might involve setting CMAKE_PREFIX_PATH to include $LOCAL_RKNN_DIR, e.g., in the cmake command below:
+# -DCMAKE_PREFIX_PATH="$LOCAL_RKNN_DIR" 
+# Or by modifying find_library and find_path calls for RKNN within Paroli's CMakeLists.txt.
+# Also, RPATH might need adjustment for the executables to find librknnrt.so in $LOCAL_RKNN_LIB_DIR at runtime.
+
+# Pass the RKNN root (now in parent's subdir or local rknn/) to CMake
 cmake .. \
     -DORT_ROOT="$ONNXRUNTIME_DIR" \
-    -DPIPER_PHONEMIZE_ROOT="$PIPER_PHONEMIZE_EXTRACTED_DIR/include/piper-phonemize" \
+    -DRKNN_ROOT_DIR="$LOCAL_RKNN_DIR" \
+    -DPIPER_PHONEMIZE_ROOT="$PIPER_PHONEMIZE_EXTRACTED_DIR" \
     -DCMAKE_BUILD_TYPE=Release \
     -DUSE_RKNN=ON
 

@@ -20,6 +20,8 @@ if (PIPER_PHONEMIZE_ROOT STREQUAL "")
     message(FATAL_ERROR "PIPER_PHONEMIZE_ROOT must be set")
 endif()
 
+set(RKNN_ROOT_DIR "" CACHE STRING "Path to local RKNN libraries root directory (used if USE_RKNN is ON)")
+
 include_directories(${PIPER_PHONEMIZE_ROOT}/include)
 link_directories(${PIPER_PHONEMIZE_ROOT}/lib)
 
@@ -31,6 +33,16 @@ add_library(piper
     piper/piper.cpp)
 
 if (USE_RKNN)
+    if (RKNN_ROOT_DIR STREQUAL "")
+        message(WARNING "USE_RKNN is ON but RKNN_ROOT_DIR is not set. CMake will try to find rknnrt in system paths.")
+        # If you want to make it an error if RKNN_ROOT_DIR is not set when USE_RKNN is ON, uncomment the next line:
+        # message(FATAL_ERROR "USE_RKNN is ON but RKNN_ROOT_DIR is not set. Please provide the path to your local RKNN installation.")
+    else()
+        message(STATUS "Using RKNN from local path: ${RKNN_ROOT_DIR}")
+        include_directories(${RKNN_ROOT_DIR}/include)
+        link_directories(${RKNN_ROOT_DIR}/lib)
+    endif()
+
     target_compile_definitions(piper PRIVATE USE_RKNN)
     target_sources(piper PRIVATE piper/rknn-inferer.cpp)
     target_link_libraries(piper PRIVATE rknnrt)

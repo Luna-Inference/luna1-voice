@@ -1,4 +1,7 @@
 build/
 .vscode
 .cache
-
+piper_phonemize/
+drogon/
+libopusenc/
+rknn-toolkit2/

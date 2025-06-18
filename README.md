@@ -1,21 +1,30 @@
 # Paroli
 
+![alt text](image.png)
+
 Streaming mode implementation of the Piper TTS system in C++ with (optional) RK3588 NPU acceleration support. Named after "speaking" in Esperanto.
 
 ## How to use
 
+```bash
 git clone https://github.com/Luna-Inference/luna1-voice
 cd luna1-voice
+```
 
+```bash
 sudo apt update
 sudo apt install xtensor-dev libspdlog-dev libspdlog-dev libfmt-dev libsoxr-dev libjsoncpp-dev uuid-dev g++ libopus-dev libespeak-ng-dev libogg-dev
+```
 
 
 # Install piper-phonemize
+```bash
 wget https://github.com/rhasspy/piper-phonemize/releases/download/2023.11.14-4/piper-phonemize_linux_aarch64.tar.gz
 tar -xvzf piper-phonemize_linux_aarch64.tar.gz
+```
 
 # Install drogon (any directory)
+```bash
 git clone https://github.com/drogonframework/drogon
 cd drogon
 git submodule update --init
@@ -23,8 +32,10 @@ mkdir build && cd build
 cmake ..
 make -j 8 && sudo make install
 cd ../..
+```
 
 #ubuntu 22.04 needs to build from source
+```bash
 git clone https://gitlab.xiph.org/xiph/libopusenc.git
 cd libopusenc
 sudo apt install autoconf
@@ -34,37 +45,51 @@ sudo apt install opus-tools
 ./configure
 sudo make install
 cd ..
+```
 
 
 
 # Download RKNN
+```bash
 cd /usr/lib
 sudo wget https://raw.githubusercontent.com/rockchip-linux/rknn-toolkit2/refs/heads/master/rknpu2/runtime/Linux/librknn_api/aarch64/librknnrt.so
-cd 
+cd
 cd /usr/include
 sudo wget https://raw.githubusercontent.com/rockchip-linux/rknn-toolkit2/refs/heads/master/rknpu2/runtime/Linux/librknn_api/include/rknn_api.h
 sudo wget https://raw.githubusercontent.com/rockchip-linux/rknn-toolkit2/refs/heads/master/rknpu2/runtime/Linux/librknn_api/include/rknn_custom_op.h
 sudo wget https://raw.githubusercontent.com/rockchip-linux/rknn-toolkit2/refs/heads/master/rknpu2/runtime/Linux/librknn_api/include/rknn_matmul_api.h
 cd
+```
 
 # Download Paroli
+```bash
 git clone https://github.com/Luna-Inference/luna1-voice
 cd luna1-voice
+```
+
 # Prepare cmake
+```bash
 mkdir build
 cd build
 cmake .. -DORT_ROOT=~/piper_phonemize -DPIPER_PHONEMIZE_ROOT=../../piper_phonemize/include/piper-phonemize -DCMAKE_BUILD_TYPE=Release -DUSE_RKNN=ON
 make -j 8
+```
 
 
 # voice espeak
+```bash
 cp -r ../../piper_phonemize/share/espeak-ng-data .
+```
 
 #Download rknn voice: https://huggingface.co/marty1885/streaming-piper/tree/main/ljspeech
+```bash
 git clone https://huggingface.co/marty1885/streaming-piper
+```
 
 # Run
+```bash
 sudo ./paroli-server --encoder streaming-piper/ljspeech/encoder.onnx --decoder streaming-piper/ljspeech/decoder.rknn -c streaming-piper/ljspeech/config.json --ip 0.0.0.0 --port 8848
+```
 
 ### The API server
 

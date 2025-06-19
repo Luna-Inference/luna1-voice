@@ -233,6 +233,35 @@ int main(int argc, char *argv[]) {
   if(!runConfig.disableWebUI)
       app().setDocumentRoot("../paroli-server/web-content");
 
+  // Enable CORS
+  // Handle OPTIONS requests (pre-flight)
+  drogon::app().registerPreRoutingAdvice([](const drogon::HttpRequestPtr &req,
+                                          drogon::AdviceCallback &&acb,
+                                          drogon::AdviceChainCallback &&accb) {
+    if (req->method() == drogon::HttpMethod::Options) {
+        auto resp = drogon::HttpResponse::newHttpResponse();
+        resp->addHeader("Access-Control-Allow-Origin", "*");
+        resp->addHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+        resp->addHeader("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization, paroli-token");
+        resp->addHeader("Access-Control-Max-Age", "86400"); // Cache preflight for 1 day
+        acb(resp); 
+    } else {
+        accb(); 
+    }
+  });
+
+  // Add CORS headers to actual responses
+  drogon::app().registerPostHandlingAdvice([](const drogon::HttpRequestPtr &req, const drogon::HttpResponsePtr &resp) {
+    resp->addHeader("Access-Control-Allow-Origin", "*");
+    // If you want to allow credentials (e.g., cookies, authorization headers from frontend):
+    // 1. Uncomment the lines below.
+    // 2. Change Access-Control-Allow-Origin above to the specific origin(s) or reflect req->getHeader("Origin").
+    //    Using '*' with credentials is not allowed by browsers.
+    // if (req->getHeader("Origin") != "") { // Example: only set for actual cross-origin requests
+    //    resp->addHeader("Access-Control-Allow-Credentials", "true");
+    // }
+  });
+
   app().addListener(runConfig.ip, runConfig.port)
       .setThreadNum(3)
       .run();

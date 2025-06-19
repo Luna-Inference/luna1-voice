@@ -48,14 +48,12 @@ example request body:
 ```json
 {
     "text": "How can I help you? Is there anything wrong?",
-    "speaker_id": 8,
-	"audio_format": "opus"
+    "audio_format": "opus"
 }
 ```
 
 The fields are as follows:
 * text - Text for the TTS engine to synthesize
-* speaker_id - ID of the speaker if using a multi speaker model
 * audio_format - Format of the resulting audio. Valid options are:
    * `pcm` - 16bit Little Endian PCM audio of the model's native sample rate
    * `opus` - OGG stream with OPUS encoded audio. Always at 24000Hz
@@ -66,7 +64,6 @@ The following is the full structure of the request JSON (in C++).
 struct ApiData
 {
     std::string text;
-    std::optional<uint64_t> speaker_id;
     std::optional<float> length_scale;
     std::optional<float> noise_scale;
     std::optional<float> noise_w;
